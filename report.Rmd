@@ -15,6 +15,7 @@ The dataset we analyzed contains the medical records of 299 heart failure patien
 # Exploratory Analysis
 ## Continuous variables
 Among all the continuous predictors, we can see that death events grouped when the follow-up-period is short(time < 50), patients with higher level of serum sodium tended to have death event, and patients with lower ejection fraction tended to have death event.(Figure 1)
+
 ## Binary variables
 Among the binary predictors, the risk ratio of high blood pressure and anaemia are 1.42 and 1.33, which means the risk of death among heart failure patients with hypertension is 1.42 times the risk of death among heart failure patients without hypertension, and the risk of death among heart failure patients with anaemia is 1.33 times the risk of death among heart failure patients without anaemia.(Table 1)
 
