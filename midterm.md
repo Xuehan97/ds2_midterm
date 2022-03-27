@@ -691,6 +691,15 @@ confusionMatrix(data = as.factor(test.nb), reference = hf_df$death_event[-trainr
     ##        'Positive' Class : Y              
     ## 
 
+``` r
+confu_df <- data.frame(glm = 0.7955, glmn = 0.6705, gam = 0.75, mars = 0.75, lda = 0.7841, nb = 0.7955)
+confu_df %>% knitr::kable()
+```
+
+|    glm |   glmn |  gam | mars |    lda |     nb |
+|-------:|-------:|-----:|-----:|-------:|-------:|
+| 0.7955 | 0.6705 | 0.75 | 0.75 | 0.7841 | 0.7955 |
+
 # Conclusions
 
 ``` r
@@ -741,7 +750,7 @@ summary(res)
 bwplot(res, metric = "ROC")
 ```
 
-![](midterm_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](midterm_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 # Strength and Limitations
 
