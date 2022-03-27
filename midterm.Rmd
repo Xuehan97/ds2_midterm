@@ -10,6 +10,9 @@ library(tidyverse)
 library(caret)
 library(pROC)
 library(pdp)
+library(vip)
+library(AppliedPredictiveModeling)
+
 ```
 
 
@@ -39,6 +42,7 @@ featurePlot(x = hf_df[,c(1,3,5,7,8,9,12)],
             plot = "density", pch = "l",
             auto.key = list(columns = 2))
 ```
+
 Among all the continuous predictors, we can see that death events grouped when the follow-up-period is short(time < 50), patients with higher level of serum sodium tended to have death event, and patients with lower ejection fraction tended to have death event.
 
 ## Binary predictors
@@ -163,6 +167,10 @@ mars.model$bestTune
 pdp::partial(mars.model, pred.var = c("age"), grid.resolution = 200) %>% autoplot()
 ```
 
+```{r}
+vip(mars.model$finalModel)
+```
+
 ## LDA 
 
 ```{r,message=FALSE, warning=FALSE}
@@ -190,9 +198,6 @@ nb.model <- train(x = hf_df[trainrows, -13],
 plot(nb.model)
 ```
 
-```{r}
-
-```
 
 ## Compare test performance
 
@@ -228,32 +233,43 @@ col = 1:6, lwd = 2)
 Confusion Matrix
 ```{r,message=FALSE, warning=FALSE}
 test.glm <- rep("N", length(glm.pred))
-test.glm[glm.pred > 0.5] <- "Y"
+test.glm[glm.pred > 0.4] <- "Y"
 confusionMatrix(data = as.factor(test.glm), reference = hf_df$death_event[-trainrows], positive = "Y")
 
 test.glmn <- rep("N", length(glmn.pred))
-test.glmn[glmn.pred > 0.5] <- "Y"
+test.glmn[glmn.pred > 0.4] <- "Y"
 confusionMatrix(data = as.factor(test.glmn), reference = hf_df$death_event[-trainrows], positive = "Y")
 
 test.gam <- rep("N", length(gam.pred))
-test.gam[gam.pred > 0.5] <- "Y"
+test.gam[gam.pred > 0.4] <- "Y"
 confusionMatrix(data = as.factor(test.gam), reference = hf_df$death_event[-trainrows], positive = "Y")
 
 test.mars <- rep("N", length(mars.pred))
-test.mars[mars.pred > 0.5] <- "Y"
+test.mars[mars.pred > 0.4] <- "Y"
 confusionMatrix(data = as.factor(test.mars), reference = hf_df$death_event[-trainrows], positive = "Y")
 
 test.lda <- rep("N", length(lda.pred))
-test.lda[lda.pred > 0.5] <- "Y"
+test.lda[lda.pred > 0.4] <- "Y"
 confusionMatrix(data = as.factor(test.lda), reference = hf_df$death_event[-trainrows], positive = "Y")
 
 test.nb <- rep("N", length(nb.pred))
-test.nb[glm.pred > 0.5] <- "Y"
+test.nb[glm.pred > 0.4] <- "Y"
 confusionMatrix(data = as.factor(test.nb), reference = hf_df$death_event[-trainrows], positive = "Y")
 
 ```
 
 # Conclusions
+```{r,message=FALSE, warning=FALSE}
+res <- resamples(list(GLM = glm.model,
+                      GLMN = glmn.model,
+                      GAM = gam.model,
+                      MARS = mars.model,
+                      LDA = lda.model,
+                      NB = nb.model))
+summary(res)
+bwplot(res, metric = "ROC")
+```
+
 
 # Strength and Limitations
 

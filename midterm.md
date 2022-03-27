@@ -8,6 +8,8 @@ library(tidyverse)
 library(caret)
 library(pROC)
 library(pdp)
+library(vip)
+library(AppliedPredictiveModeling)
 ```
 
 # Introduction
@@ -51,11 +53,12 @@ featurePlot(x = hf_df[,c(1,3,5,7,8,9,12)],
             auto.key = list(columns = 2))
 ```
 
-![](midterm_files/figure-gfm/unnamed-chunk-3-1.png)<!-- --> Among all
-the continuous predictors, we can see that death events grouped when the
-follow-up-period is short(time &lt; 50), patients with higher level of
-serum sodium tended to have death event, and patients with lower
-ejection fraction tended to have death event.
+![](midterm_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+
+Among all the continuous predictors, we can see that death events
+grouped when the follow-up-period is short(time &lt; 50), patients with
+higher level of serum sodium tended to have death event, and patients
+with lower ejection fraction tended to have death event.
 
 ## Binary predictors
 
@@ -350,6 +353,12 @@ pdp::partial(mars.model, pred.var = c("age"), grid.resolution = 200) %>% autoplo
 
 ![](midterm_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
+``` r
+vip(mars.model$finalModel)
+```
+
+![](midterm_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
 ## LDA
 
 ``` r
@@ -429,7 +438,7 @@ nb.model <- train(x = hf_df[trainrows, -13],
 plot(nb.model)
 ```
 
-![](midterm_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](midterm_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 ## Compare test performance
 
@@ -468,7 +477,7 @@ Confusion Matrix
 
 ``` r
 test.glm <- rep("N", length(glm.pred))
-test.glm[glm.pred > 0.5] <- "Y"
+test.glm[glm.pred > 0.4] <- "Y"
 confusionMatrix(data = as.factor(test.glm), reference = hf_df$death_event[-trainrows], positive = "Y")
 ```
 
@@ -476,33 +485,33 @@ confusionMatrix(data = as.factor(test.glm), reference = hf_df$death_event[-train
     ## 
     ##           Reference
     ## Prediction  N  Y
-    ##          N 55 12
-    ##          Y  5 16
+    ##          N 54 11
+    ##          Y  6 17
     ##                                           
     ##                Accuracy : 0.8068          
     ##                  95% CI : (0.7088, 0.8832)
     ##     No Information Rate : 0.6818          
     ##     P-Value [Acc > NIR] : 0.006377        
     ##                                           
-    ##                   Kappa : 0.523           
+    ##                   Kappa : 0.5325          
     ##                                           
-    ##  Mcnemar's Test P-Value : 0.145610        
+    ##  Mcnemar's Test P-Value : 0.331975        
     ##                                           
-    ##             Sensitivity : 0.5714          
-    ##             Specificity : 0.9167          
-    ##          Pos Pred Value : 0.7619          
-    ##          Neg Pred Value : 0.8209          
+    ##             Sensitivity : 0.6071          
+    ##             Specificity : 0.9000          
+    ##          Pos Pred Value : 0.7391          
+    ##          Neg Pred Value : 0.8308          
     ##              Prevalence : 0.3182          
-    ##          Detection Rate : 0.1818          
-    ##    Detection Prevalence : 0.2386          
-    ##       Balanced Accuracy : 0.7440          
+    ##          Detection Rate : 0.1932          
+    ##    Detection Prevalence : 0.2614          
+    ##       Balanced Accuracy : 0.7536          
     ##                                           
     ##        'Positive' Class : Y               
     ## 
 
 ``` r
 test.glmn <- rep("N", length(glmn.pred))
-test.glmn[glmn.pred > 0.5] <- "Y"
+test.glmn[glmn.pred > 0.4] <- "Y"
 confusionMatrix(data = as.factor(test.glmn), reference = hf_df$death_event[-trainrows], positive = "Y")
 ```
 
@@ -510,33 +519,33 @@ confusionMatrix(data = as.factor(test.glmn), reference = hf_df$death_event[-trai
     ## 
     ##           Reference
     ## Prediction  N  Y
-    ##          N 60 28
-    ##          Y  0  0
+    ##          N 60 23
+    ##          Y  0  5
     ##                                           
-    ##                Accuracy : 0.6818          
-    ##                  95% CI : (0.5739, 0.7771)
+    ##                Accuracy : 0.7386          
+    ##                  95% CI : (0.6341, 0.8266)
     ##     No Information Rate : 0.6818          
-    ##     P-Value [Acc > NIR] : 0.551           
+    ##     P-Value [Acc > NIR] : 0.1512          
     ##                                           
-    ##                   Kappa : 0               
+    ##                   Kappa : 0.2287          
     ##                                           
-    ##  Mcnemar's Test P-Value : 3.352e-07       
+    ##  Mcnemar's Test P-Value : 4.49e-06        
     ##                                           
-    ##             Sensitivity : 0.0000          
-    ##             Specificity : 1.0000          
-    ##          Pos Pred Value :    NaN          
-    ##          Neg Pred Value : 0.6818          
-    ##              Prevalence : 0.3182          
-    ##          Detection Rate : 0.0000          
-    ##    Detection Prevalence : 0.0000          
-    ##       Balanced Accuracy : 0.5000          
+    ##             Sensitivity : 0.17857         
+    ##             Specificity : 1.00000         
+    ##          Pos Pred Value : 1.00000         
+    ##          Neg Pred Value : 0.72289         
+    ##              Prevalence : 0.31818         
+    ##          Detection Rate : 0.05682         
+    ##    Detection Prevalence : 0.05682         
+    ##       Balanced Accuracy : 0.58929         
     ##                                           
     ##        'Positive' Class : Y               
     ## 
 
 ``` r
 test.gam <- rep("N", length(gam.pred))
-test.gam[gam.pred > 0.5] <- "Y"
+test.gam[gam.pred > 0.4] <- "Y"
 confusionMatrix(data = as.factor(test.gam), reference = hf_df$death_event[-trainrows], positive = "Y")
 ```
 
@@ -544,33 +553,33 @@ confusionMatrix(data = as.factor(test.gam), reference = hf_df$death_event[-train
     ## 
     ##           Reference
     ## Prediction  N  Y
-    ##          N 56 14
-    ##          Y  4 14
+    ##          N 55 13
+    ##          Y  5 15
     ##                                          
     ##                Accuracy : 0.7955         
     ##                  95% CI : (0.6961, 0.874)
     ##     No Information Rate : 0.6818         
     ##     P-Value [Acc > NIR] : 0.01252        
     ##                                          
-    ##                   Kappa : 0.4789         
+    ##                   Kappa : 0.4897         
     ##                                          
-    ##  Mcnemar's Test P-Value : 0.03389        
+    ##  Mcnemar's Test P-Value : 0.09896        
     ##                                          
-    ##             Sensitivity : 0.5000         
-    ##             Specificity : 0.9333         
-    ##          Pos Pred Value : 0.7778         
-    ##          Neg Pred Value : 0.8000         
+    ##             Sensitivity : 0.5357         
+    ##             Specificity : 0.9167         
+    ##          Pos Pred Value : 0.7500         
+    ##          Neg Pred Value : 0.8088         
     ##              Prevalence : 0.3182         
-    ##          Detection Rate : 0.1591         
-    ##    Detection Prevalence : 0.2045         
-    ##       Balanced Accuracy : 0.7167         
+    ##          Detection Rate : 0.1705         
+    ##    Detection Prevalence : 0.2273         
+    ##       Balanced Accuracy : 0.7262         
     ##                                          
     ##        'Positive' Class : Y              
     ## 
 
 ``` r
 test.mars <- rep("N", length(mars.pred))
-test.mars[mars.pred > 0.5] <- "Y"
+test.mars[mars.pred > 0.4] <- "Y"
 confusionMatrix(data = as.factor(test.mars), reference = hf_df$death_event[-trainrows], positive = "Y")
 ```
 
@@ -578,33 +587,33 @@ confusionMatrix(data = as.factor(test.mars), reference = hf_df$death_event[-trai
     ## 
     ##           Reference
     ## Prediction  N  Y
-    ##          N 56 10
-    ##          Y  4 18
+    ##          N 55  6
+    ##          Y  5 22
     ##                                           
-    ##                Accuracy : 0.8409          
-    ##                  95% CI : (0.7475, 0.9102)
+    ##                Accuracy : 0.875           
+    ##                  95% CI : (0.7873, 0.9359)
     ##     No Information Rate : 0.6818          
-    ##     P-Value [Acc > NIR] : 0.0005567       
+    ##     P-Value [Acc > NIR] : 2.377e-05       
     ##                                           
-    ##                   Kappa : 0.6111          
+    ##                   Kappa : 0.7091          
     ##                                           
-    ##  Mcnemar's Test P-Value : 0.1814492       
+    ##  Mcnemar's Test P-Value : 1               
     ##                                           
-    ##             Sensitivity : 0.6429          
-    ##             Specificity : 0.9333          
-    ##          Pos Pred Value : 0.8182          
-    ##          Neg Pred Value : 0.8485          
+    ##             Sensitivity : 0.7857          
+    ##             Specificity : 0.9167          
+    ##          Pos Pred Value : 0.8148          
+    ##          Neg Pred Value : 0.9016          
     ##              Prevalence : 0.3182          
-    ##          Detection Rate : 0.2045          
-    ##    Detection Prevalence : 0.2500          
-    ##       Balanced Accuracy : 0.7881          
+    ##          Detection Rate : 0.2500          
+    ##    Detection Prevalence : 0.3068          
+    ##       Balanced Accuracy : 0.8512          
     ##                                           
     ##        'Positive' Class : Y               
     ## 
 
 ``` r
 test.lda <- rep("N", length(lda.pred))
-test.lda[lda.pred > 0.5] <- "Y"
+test.lda[lda.pred > 0.4] <- "Y"
 confusionMatrix(data = as.factor(test.lda), reference = hf_df$death_event[-trainrows], positive = "Y")
 ```
 
@@ -612,33 +621,33 @@ confusionMatrix(data = as.factor(test.lda), reference = hf_df$death_event[-train
     ## 
     ##           Reference
     ## Prediction  N  Y
-    ##          N 56 11
-    ##          Y  4 17
+    ##          N 54 10
+    ##          Y  6 18
     ##                                           
-    ##                Accuracy : 0.8295          
-    ##                  95% CI : (0.7345, 0.9013)
+    ##                Accuracy : 0.8182          
+    ##                  95% CI : (0.7216, 0.8924)
     ##     No Information Rate : 0.6818          
-    ##     P-Value [Acc > NIR] : 0.00135         
+    ##     P-Value [Acc > NIR] : 0.003039        
     ##                                           
-    ##                   Kappa : 0.5791          
+    ##                   Kappa : 0.5644          
     ##                                           
-    ##  Mcnemar's Test P-Value : 0.12134         
+    ##  Mcnemar's Test P-Value : 0.453255        
     ##                                           
-    ##             Sensitivity : 0.6071          
-    ##             Specificity : 0.9333          
-    ##          Pos Pred Value : 0.8095          
-    ##          Neg Pred Value : 0.8358          
+    ##             Sensitivity : 0.6429          
+    ##             Specificity : 0.9000          
+    ##          Pos Pred Value : 0.7500          
+    ##          Neg Pred Value : 0.8438          
     ##              Prevalence : 0.3182          
-    ##          Detection Rate : 0.1932          
-    ##    Detection Prevalence : 0.2386          
-    ##       Balanced Accuracy : 0.7702          
+    ##          Detection Rate : 0.2045          
+    ##    Detection Prevalence : 0.2727          
+    ##       Balanced Accuracy : 0.7714          
     ##                                           
     ##        'Positive' Class : Y               
     ## 
 
 ``` r
 test.nb <- rep("N", length(nb.pred))
-test.nb[glm.pred > 0.5] <- "Y"
+test.nb[glm.pred > 0.4] <- "Y"
 confusionMatrix(data = as.factor(test.nb), reference = hf_df$death_event[-trainrows], positive = "Y")
 ```
 
@@ -646,31 +655,81 @@ confusionMatrix(data = as.factor(test.nb), reference = hf_df$death_event[-trainr
     ## 
     ##           Reference
     ## Prediction  N  Y
-    ##          N 55 12
-    ##          Y  5 16
+    ##          N 54 11
+    ##          Y  6 17
     ##                                           
     ##                Accuracy : 0.8068          
     ##                  95% CI : (0.7088, 0.8832)
     ##     No Information Rate : 0.6818          
     ##     P-Value [Acc > NIR] : 0.006377        
     ##                                           
-    ##                   Kappa : 0.523           
+    ##                   Kappa : 0.5325          
     ##                                           
-    ##  Mcnemar's Test P-Value : 0.145610        
+    ##  Mcnemar's Test P-Value : 0.331975        
     ##                                           
-    ##             Sensitivity : 0.5714          
-    ##             Specificity : 0.9167          
-    ##          Pos Pred Value : 0.7619          
-    ##          Neg Pred Value : 0.8209          
+    ##             Sensitivity : 0.6071          
+    ##             Specificity : 0.9000          
+    ##          Pos Pred Value : 0.7391          
+    ##          Neg Pred Value : 0.8308          
     ##              Prevalence : 0.3182          
-    ##          Detection Rate : 0.1818          
-    ##    Detection Prevalence : 0.2386          
-    ##       Balanced Accuracy : 0.7440          
+    ##          Detection Rate : 0.1932          
+    ##    Detection Prevalence : 0.2614          
+    ##       Balanced Accuracy : 0.7536          
     ##                                           
     ##        'Positive' Class : Y               
     ## 
 
 # Conclusions
+
+``` r
+res <- resamples(list(GLM = glm.model,
+                      GLMN = glmn.model,
+                      GAM = gam.model,
+                      MARS = mars.model,
+                      LDA = lda.model,
+                      NB = nb.model))
+summary(res)
+```
+
+    ## 
+    ## Call:
+    ## summary.resamples(object = res)
+    ## 
+    ## Models: GLM, GLMN, GAM, MARS, LDA, NB 
+    ## Number of resamples: 25 
+    ## 
+    ## ROC 
+    ##           Min.   1st Qu.    Median      Mean   3rd Qu.      Max. NA's
+    ## GLM  0.7372449 0.8399015 0.8622449 0.8625304 0.9030612 0.9469496    0
+    ## GLMN 0.7627551 0.8351648 0.8779841 0.8791417 0.9334975 0.9734748    0
+    ## GAM  0.5782493 0.7576531 0.8078818 0.7931914 0.8594164 0.9581281    0
+    ## MARS 0.6871921 0.8443878 0.8866995 0.8766179 0.9196429 0.9778325    0
+    ## LDA  0.7525510 0.8214286 0.8596939 0.8618043 0.9124668 0.9469496    0
+    ## NB   0.7315271 0.8341837 0.8719212 0.8657589 0.8928571 0.9753695    0
+    ## 
+    ## Sens 
+    ##           Min.   1st Qu.    Median      Mean   3rd Qu.      Max. NA's
+    ## GLM  0.7857143 0.8571429 0.8965517 0.8894089 0.9310345 1.0000000    0
+    ## GLMN 0.9655172 1.0000000 1.0000000 0.9986207 1.0000000 1.0000000    0
+    ## GAM  0.7241379 0.7931034 0.8275862 0.8476355 0.8965517 0.9642857    0
+    ## MARS 0.7586207 0.8620690 0.8965517 0.9060099 0.9642857 0.9655172    0
+    ## LDA  0.7500000 0.8620690 0.8965517 0.8837438 0.9285714 1.0000000    0
+    ## NB   0.8620690 0.9310345 0.9642857 0.9553202 1.0000000 1.0000000    0
+    ## 
+    ## Spec 
+    ##            Min.   1st Qu.    Median      Mean   3rd Qu.      Max. NA's
+    ## GLM  0.28571429 0.5384615 0.6923077 0.6443956 0.7692308 0.9285714    0
+    ## GLMN 0.00000000 0.0000000 0.0000000 0.0232967 0.0000000 0.1428571    0
+    ## GAM  0.28571429 0.5384615 0.6428571 0.6237363 0.7142857 0.9285714    0
+    ## MARS 0.28571429 0.6153846 0.6923077 0.6734066 0.7692308 1.0000000    0
+    ## LDA  0.35714286 0.5384615 0.6923077 0.6531868 0.7857143 0.9285714    0
+    ## NB   0.07142857 0.3571429 0.5000000 0.4503297 0.5714286 0.8461538    0
+
+``` r
+bwplot(res, metric = "ROC")
+```
+
+![](midterm_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 # Strength and Limitations
 
