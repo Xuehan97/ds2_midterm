@@ -1,0 +1,30 @@
+---
+title: "Report"
+author: "Xuehan Yang"
+date: "2022/3/27"
+output: 
+  pdf_document:
+    latex_engine: xelatex
+---
+
+# Introduction
+
+# Data
+
+# Exploratory Analysis
+
+## Continuous variables
+
+## Binary variables
+
+# Models
+
+## Predictors
+
+## Cross Validation setting
+
+## Model Selection
+
+## Test Performance
+
+# Conclusions

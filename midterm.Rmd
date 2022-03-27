@@ -1,0 +1,298 @@
+---
+title: "Report"
+author: "Xuehan Yang"
+date: "2022/3/24"
+output: github_document
+---
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(caret)
+library(pROC)
+library(pdp)
+```
+
+
+# Introduction
+Heart failure is a common form of cardiovascular disease, which is a severe threat to patient's life. It occurs when the heart muscle doesn't pump blood as well as it should. Our research aims predict the death probability among heart failure patients with machine learning models on clinical features.
+
+# Data
+```{r, warning=FALSE, message=FALSE}
+hf_df <- read_csv("heart_failure_clinical_records_dataset.csv") %>% janitor::clean_names() %>% mutate(
+  death_event = case_when(
+    death_event == 1 ~ "Y",
+    death_event == 0 ~ "N"
+  ),
+  death_event = factor(death_event)
+)
+```
+
+The dataset we analyzed contains the medical records of `r nrow(hf_df)` heart failure patients collected at the Faisalabad Institute of Cardiology and at the Allied Hospital in Faisalabad (Punjab, Pakistan), during April–December 2015 $^1$ $^2$. It is a prospective cohort study. The patients consisted of 105 women and 194 men, and their ages range between 40 and 95 years old.  The features of those patients include `r ncol(hf_df)`, which further will become our predictors.
+
+# Exploratory analysis/visualization
+## Continuous predictors
+```{r,message=FALSE, warning=FALSE}
+featurePlot(x = hf_df[,c(1,3,5,7,8,9,12)],
+            y = hf_df$death_event,
+            scales = list(x = list(relation = "free"),
+                          y = list(relation = "free")),
+            plot = "density", pch = "l",
+            auto.key = list(columns = 2))
+```
+Among all the continuous predictors, we can see that death events grouped when the follow-up-period is short(time < 50), patients with higher level of serum sodium tended to have death event, and patients with lower ejection fraction tended to have death event.
+
+## Binary predictors
+```{r,message=FALSE, warning=FALSE}
+contin_tb <- 
+hf_df %>% select(anaemia, diabetes, high_blood_pressure, sex, smoking, death_event) %>% 
+  pivot_longer(
+    cols = 1:5,
+    names_to = "feature",
+    values_to = "exposed"
+  ) %>% 
+  group_by(feature, exposed, death_event) %>% 
+  summarise(n = n()) %>% 
+  pivot_wider(
+    names_from = death_event,
+    values_from = n
+  )
+
+contin_tb %>% knitr::kable()
+```
+
+```{r,message=FALSE, warning=FALSE}
+contin_tb %>% mutate(risk = Y/N) %>% 
+  select(-N,-Y) %>% 
+  mutate(
+    exposed = case_when(
+      exposed == 1 ~ "exposed",
+      exposed == 0 ~ "nonexposed"
+    )
+  ) %>% 
+  pivot_wider(
+    names_from = exposed,
+    values_from = risk
+  ) %>% 
+  mutate(riskratio = exposed/nonexposed) %>% 
+  arrange(desc(riskratio)) %>% knitr::kable()
+```
+
+Among the binary predictors, the risk ratio of high blood pressure and anaemia are 1.42 and 1.33, which means the risk of death among heart failure patients with hypertension is 1.42 times the risk of death among heart failure patients without hypertension, and the risk of death among heart failure patients with anaemia is 1.33 times the risk of death among heart failure patients without anaemia. 
+
+# Models
+In order to decide whether a patient with heart failure would die in following period, we use classification models to see what kinds of features correspond to the death event.
+
+## predictor
+There are 12 predictors included in our models, consisting of 7 continuous predictors and 5 binary predictors. Specifically, 
+age of the patient (age), if decrease of red blood cells or hemoglobin (anaemia), if the patient has hypertension (high_blood_pressure), level of the CPK enzyme in the blood (creatinine_phosphokinase), if the patient has diabetes (diabete), percentage of blood leaving the heart at each contraction (ejection_fraction), platelets in the blood (platelets), woman or man (sex), level of serum creatinine in the blood (serum_creatinine), level of serum sodium in the blood (serum_sodium), if the patient smokes or not (smoking), follow-up period (time), if the patient deceased during the follow-up period (death_event).
+
+## Cross Validation splitting
+
+```{r,message=FALSE, warning=FALSE}
+set.seed(11)
+trainrows <- createDataPartition(y = hf_df$death_event,
+                                 p = 0.7,
+                                 list = FALSE)
+```
+Full dataset is partitioned to 70% training data and 30% test data.
+
+## Logistic Regression
+
+$$log(\frac{\pi_i}{1-\pi_i}) = \beta_0 + \beta_1x_1 + \beta_2x_2 + \cdots + \beta_px_p\quad p=12$$
+
+```{r,message=FALSE, warning=FALSE}
+ctrl <- trainControl(method = "repeatedcv", repeats = 5,
+                     summaryFunction = twoClassSummary,
+                     classProbs = TRUE)
+
+set.seed(22)
+glm.model <- train(x = hf_df[trainrows, -13],
+                   y = hf_df$death_event[trainrows],
+                   method = "glm",
+                   metric = "ROC",
+                   trControl = ctrl)
+summary(glm.model)
+```
+
+## Penalized Logistic Regression
+
+```{r,message=FALSE, warning=FALSE}
+glmnGrid <- expand.grid(.alpha = seq(0, 1, length = 21), .lambda = exp(seq(-5, 2, length = 40)))
+
+set.seed(22)
+glmn.model <- train(x = hf_df[trainrows, -13],
+                    y = hf_df$death_event[trainrows],
+                    method = "glmnet",
+                    tuneGrid = glmnGrid,
+                    metric = "ROC",
+                    trControl = ctrl)
+glmn.model$bestTune
+```
+
+
+## Logistic with GAM
+
+```{r,message=FALSE, warning=FALSE}
+set.seed(22)
+gam.model <- train(x = hf_df[trainrows, -13],
+                   y = hf_df$death_event[trainrows],
+                   method = "gam",
+                   metric = "ROC",
+                   trControl = ctrl)
+gam.model$finalModel
+summary(gam.model)
+```
+
+
+## Logistic with MARS to add interaction
+
+```{r,message=FALSE, warning=FALSE}
+set.seed(22)
+mars.model <- train(x = hf_df[trainrows,-13],
+                    y = hf_df$death_event[trainrows],
+                    method = "earth",
+                    tuneGrid = expand.grid(degree = 1:4, nprune = 2:20),
+                    metric = "ROC",
+                    trControl = ctrl)
+plot(mars.model)
+summary(mars.model)
+mars.model$bestTune
+```
+
+```{r}
+pdp::partial(mars.model, pred.var = c("age"), grid.resolution = 200) %>% autoplot()
+```
+
+## LDA 
+
+```{r,message=FALSE, warning=FALSE}
+set.seed(22)
+lda.model <- train(x = hf_df[trainrows,-13],
+                    y = hf_df$death_event[trainrows],
+                    method = "lda",
+                    metric = "ROC",
+                    trControl = ctrl)
+summary(lda.model)
+lda.model$finalModel
+```
+
+## Naive Bayes
+```{r,message=FALSE, warning=FALSE}
+nbGrid <- expand.grid(usekernel = c(FALSE,TRUE), fL = 1, adjust = seq(.2, 3, by = .2))
+
+set.seed(22)
+nb.model <- train(x = hf_df[trainrows, -13],
+                  y = hf_df$death_event[trainrows],
+                  method = "nb",
+                  tuneGrid = nbGrid,
+                  metric = "ROC",
+                  trControl = ctrl)
+plot(nb.model)
+```
+
+```{r}
+
+```
+
+## Compare test performance
+
+```{r,message=FALSE, warning=FALSE}
+glm.pred <- predict(glm.model, newdata = hf_df[-trainrows,], type = "prob")[,2]
+glmn.pred <- predict(glmn.model, newdata = hf_df[-trainrows,], type = "prob")[,2]
+gam.pred <- predict(gam.model, newdata = hf_df[-trainrows,], type = "prob")[,2]
+mars.pred <- predict(mars.model, newdata = hf_df[-trainrows,], type = "prob")[,2]
+lda.pred <- predict(lda.model, newdata = hf_df[-trainrows,], type = "prob")[,2]
+nb.pred <- predict(nb.model, newdata = hf_df[-trainrows,], type = "prob")[,2]
+
+roc.glm <- roc(hf_df$death_event[-trainrows], glm.pred)
+roc.glmn <- roc(hf_df$death_event[-trainrows], glmn.pred)
+roc.gam <- roc(hf_df$death_event[-trainrows], gam.pred)
+roc.mars <- roc(hf_df$death_event[-trainrows], mars.pred)
+roc.lda <- roc(hf_df$death_event[-trainrows], lda.pred)
+roc.nb <- roc(hf_df$death_event[-trainrows], nb.pred)
+
+auc <- c(roc.glm$auc[1], roc.glmn$auc[1], roc.gam$auc[1], roc.mars$auc[1], roc.lda$auc[1], roc.nb$auc[1])
+
+plot(roc.glm, legacy.axes = TRUE)
+plot(roc.glmn, col = 2, add = TRUE)
+plot(roc.gam, col = 3, add = TRUE)
+plot(roc.mars, col = 4, add = TRUE)
+plot(roc.lda, col = 5, add = TRUE)
+plot(roc.nb, col = 6, add = TRUE)
+
+modelNames <- c("glm","glmn","gam","mars","lda","nb")
+legend("bottomright", legend = paste0(modelNames, ": ", round(auc,3)),
+col = 1:6, lwd = 2)
+```
+
+Confusion Matrix
+```{r,message=FALSE, warning=FALSE}
+test.glm <- rep("N", length(glm.pred))
+test.glm[glm.pred > 0.5] <- "Y"
+confusionMatrix(data = as.factor(test.glm), reference = hf_df$death_event[-trainrows], positive = "Y")
+
+test.glmn <- rep("N", length(glmn.pred))
+test.glmn[glmn.pred > 0.5] <- "Y"
+confusionMatrix(data = as.factor(test.glmn), reference = hf_df$death_event[-trainrows], positive = "Y")
+
+test.gam <- rep("N", length(gam.pred))
+test.gam[gam.pred > 0.5] <- "Y"
+confusionMatrix(data = as.factor(test.gam), reference = hf_df$death_event[-trainrows], positive = "Y")
+
+test.mars <- rep("N", length(mars.pred))
+test.mars[mars.pred > 0.5] <- "Y"
+confusionMatrix(data = as.factor(test.mars), reference = hf_df$death_event[-trainrows], positive = "Y")
+
+test.lda <- rep("N", length(lda.pred))
+test.lda[lda.pred > 0.5] <- "Y"
+confusionMatrix(data = as.factor(test.lda), reference = hf_df$death_event[-trainrows], positive = "Y")
+
+test.nb <- rep("N", length(nb.pred))
+test.nb[glm.pred > 0.5] <- "Y"
+confusionMatrix(data = as.factor(test.nb), reference = hf_df$death_event[-trainrows], positive = "Y")
+
+```
+
+# Conclusions
+
+# Strength and Limitations
+
+# Reference
+
+1.Ahmad T, Munir A, Bhatti SH, Aftab M, Raza MA. Survival analysis of heart failure patients: a case study. PLoS ONE. 2017; 12(7):0181001.
+2.Zahid FM, Ramzan S, Faisal S, Hussain I. Gender based survival prediction models for heart failure patients: a case study in Pakistan. PLoS ONE. 2019; 14(2):0210602.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
