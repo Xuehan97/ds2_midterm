@@ -101,7 +101,7 @@ Full dataset is partitioned to 70% training data and 30% test data.
 $$log(\frac{\pi_i}{1-\pi_i}) = \beta_0 + \beta_1x_1 + \beta_2x_2 + \cdots + \beta_px_p\quad p=12$$
 
 ```{r,message=FALSE, warning=FALSE}
-ctrl <- trainControl(method = "repeatedcv", repeats = 5,
+ctrl <- trainControl(method = "repeatedcv", repeats = 5, number = 5,
                      summaryFunction = twoClassSummary,
                      classProbs = TRUE)
 

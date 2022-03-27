@@ -158,7 +158,7 @@ Full dataset is partitioned to 70% training data and 30% test data.
 $$log(\\frac{\\pi\_i}{1-\\pi\_i}) = \\beta\_0 + \\beta\_1x\_1 + \\beta\_2x\_2 + \\cdots + \\beta\_px\_p\\quad p=12$$
 
 ``` r
-ctrl <- trainControl(method = "repeatedcv", repeats = 5,
+ctrl <- trainControl(method = "repeatedcv", repeats = 5, number = 5,
                      summaryFunction = twoClassSummary,
                      classProbs = TRUE)
 
@@ -220,8 +220,8 @@ glmn.model <- train(x = hf_df[trainrows, -13],
 glmn.model$bestTune
 ```
 
-    ##     alpha    lambda
-    ## 179   0.2 0.1704641
+    ##    alpha    lambda
+    ## 68  0.05 0.8574039
 
 ## Logistic with GAM
 
@@ -245,10 +245,10 @@ gam.model$finalModel
     ##     s(age) + s(time) + s(platelets) + s(creatinine_phosphokinase)
     ## 
     ## Estimated degrees of freedom:
-    ## 1.5452 2.1921 5.6651 1.4792 8.9997 0.0000 0.0005 
-    ##  total = 25.88 
+    ## 1.46 1.00 2.13 1.00 9.00 3.58 7.90 
+    ##  total = 32.06 
     ## 
-    ## UBRE score: -0.2829606
+    ## UBRE score: -0.3571576
 
 ``` r
 summary(gam.model)
@@ -265,29 +265,29 @@ summary(gam.model)
     ## 
     ## Parametric coefficients:
     ##                     Estimate Std. Error z value Pr(>|z|)  
-    ## (Intercept)         -1.97924    1.10140  -1.797   0.0723 .
-    ## anaemia             -1.13985    0.62895  -1.812   0.0699 .
-    ## diabetes            -0.27436    0.58195  -0.471   0.6373  
-    ## high_blood_pressure -0.09577    0.59653  -0.161   0.8725  
-    ## sex                 -1.01700    0.66772  -1.523   0.1277  
-    ## smoking             -0.20193    0.64838  -0.311   0.7555  
+    ## (Intercept)         -14.8754    41.2918  -0.360   0.7187  
+    ## anaemia              -1.1052     0.7149  -1.546   0.1221  
+    ## diabetes             -1.0662     0.7414  -1.438   0.1504  
+    ## high_blood_pressure  -0.4843     0.7800  -0.621   0.5347  
+    ## sex                  -1.3565     0.8165  -1.661   0.0967 .
+    ## smoking              -0.3730     0.8696  -0.429   0.6680  
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Approximate significance of smooth terms:
-    ##                                   edf Ref.df Chi.sq  p-value    
-    ## s(ejection_fraction)        1.545e+00      9 13.154 0.000337 ***
-    ## s(serum_sodium)             2.192e+00      9  5.330 0.059921 .  
-    ## s(serum_creatinine)         5.665e+00      9 10.129 0.083384 .  
-    ## s(age)                      1.479e+00      9  6.432 0.012822 *  
-    ## s(time)                     9.000e+00      9 34.476 4.85e-05 ***
-    ## s(platelets)                1.115e-05      9  0.000 0.455619    
-    ## s(creatinine_phosphokinase) 5.186e-04      9  0.000 0.319798    
+    ##                               edf Ref.df Chi.sq  p-value    
+    ## s(ejection_fraction)        1.457  1.795 10.806 0.002560 ** 
+    ## s(serum_sodium)             1.000  1.000  3.263 0.070880 .  
+    ## s(serum_creatinine)         2.127  2.681 10.039 0.018123 *  
+    ## s(age)                      1.000  1.000  8.468 0.003614 ** 
+    ## s(time)                     9.000  9.000 29.393 0.000552 ***
+    ## s(platelets)                3.580  4.420 10.168 0.060791 .  
+    ## s(creatinine_phosphokinase) 7.898  7.992 13.688 0.091188 .  
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## R-sq.(adj) =  0.648   Deviance explained = 62.5%
-    ## UBRE = -0.28296  Scale est. = 1         n = 211
+    ## R-sq.(adj) =   0.73   Deviance explained =   73%
+    ## UBRE = -0.35716  Scale est. = 1         n = 211
 
 ## Logistic with MARS to add interaction
 
@@ -309,33 +309,35 @@ summary(mars.model)
 ```
 
     ## Call: earth(x=tbl_df[211,12], y=factor.object, keepxy=TRUE,
-    ##             glm=list(family=function.object, maxit=100), degree=1, nprune=6)
+    ##             glm=list(family=function.object, maxit=100), degree=1, nprune=8)
     ## 
     ## GLM coefficients
-    ##                                    Y
-    ## (Intercept)              -1.01927663
-    ## h(age-67)                 0.11401409
-    ## h(35-ejection_fraction)   0.18385539
-    ## h(1.83-serum_creatinine) -1.79626411
-    ## h(80-time)                0.05326049
-    ## h(time-80)               -0.00856679
+    ##                                   Y
+    ## (Intercept)               1.6160105
+    ## h(age-67)                 0.1254412
+    ## h(35-ejection_fraction)   0.1844068
+    ## h(1.83-serum_creatinine) -2.0269340
+    ## h(time-64)               -0.2397973
+    ## h(time-80)                0.2690722
+    ## h(time-170)              -0.1331508
+    ## h(time-210)               0.1261266
     ## 
     ## GLM (family binomial, link logit):
     ##  nulldev  df       dev  df   devratio     AIC iters converged
-    ##  265.257 210   135.406 205       0.49   147.4     6         1
+    ##  265.257 210    125.66 203      0.526   141.7     6         1
     ## 
-    ## Earth selected 6 of 19 terms, and 4 of 12 predictors (nprune=6)
+    ## Earth selected 8 of 19 terms, and 4 of 12 predictors (nprune=8)
     ## Termination condition: Reached nk 25
-    ## Importance: time, ejection_fraction, serum_creatinine, age, anaemia-unused, ...
-    ## Number of terms at each degree of interaction: 1 5 (additive model)
-    ## Earth GCV 0.1162873    RSS 22.04499    GRSq 0.472617    RSq 0.5216481
+    ## Importance: time, ejection_fraction, serum_creatinine, age, ...
+    ## Number of terms at each degree of interaction: 1 7 (additive model)
+    ## Earth GCV 0.1139433    RSS 20.74524    GRSq 0.4832478    RSq 0.5498514
 
 ``` r
 mars.model$bestTune
 ```
 
     ##   nprune degree
-    ## 5      6      1
+    ## 7      8      1
 
 ``` r
 pdp::partial(mars.model, pred.var = c("age"), grid.resolution = 200) %>% autoplot()
@@ -508,26 +510,26 @@ confusionMatrix(data = as.factor(test.glmn), reference = hf_df$death_event[-trai
     ## 
     ##           Reference
     ## Prediction  N  Y
-    ##          N 60 20
-    ##          Y  0  8
+    ##          N 60 28
+    ##          Y  0  0
     ##                                           
-    ##                Accuracy : 0.7727          
-    ##                  95% CI : (0.6711, 0.8553)
+    ##                Accuracy : 0.6818          
+    ##                  95% CI : (0.5739, 0.7771)
     ##     No Information Rate : 0.6818          
-    ##     P-Value [Acc > NIR] : 0.0401          
+    ##     P-Value [Acc > NIR] : 0.551           
     ##                                           
-    ##                   Kappa : 0.3529          
+    ##                   Kappa : 0               
     ##                                           
-    ##  Mcnemar's Test P-Value : 2.152e-05       
+    ##  Mcnemar's Test P-Value : 3.352e-07       
     ##                                           
-    ##             Sensitivity : 0.28571         
-    ##             Specificity : 1.00000         
-    ##          Pos Pred Value : 1.00000         
-    ##          Neg Pred Value : 0.75000         
-    ##              Prevalence : 0.31818         
-    ##          Detection Rate : 0.09091         
-    ##    Detection Prevalence : 0.09091         
-    ##       Balanced Accuracy : 0.64286         
+    ##             Sensitivity : 0.0000          
+    ##             Specificity : 1.0000          
+    ##          Pos Pred Value :    NaN          
+    ##          Neg Pred Value : 0.6818          
+    ##              Prevalence : 0.3182          
+    ##          Detection Rate : 0.0000          
+    ##    Detection Prevalence : 0.0000          
+    ##       Balanced Accuracy : 0.5000          
     ##                                           
     ##        'Positive' Class : Y               
     ## 
@@ -542,28 +544,28 @@ confusionMatrix(data = as.factor(test.gam), reference = hf_df$death_event[-train
     ## 
     ##           Reference
     ## Prediction  N  Y
-    ##          N 56 15
-    ##          Y  4 13
-    ##                                           
-    ##                Accuracy : 0.7841          
-    ##                  95% CI : (0.6835, 0.8647)
-    ##     No Information Rate : 0.6818          
-    ##     P-Value [Acc > NIR] : 0.02309         
-    ##                                           
-    ##                   Kappa : 0.4441          
-    ##                                           
-    ##  Mcnemar's Test P-Value : 0.02178         
-    ##                                           
-    ##             Sensitivity : 0.4643          
-    ##             Specificity : 0.9333          
-    ##          Pos Pred Value : 0.7647          
-    ##          Neg Pred Value : 0.7887          
-    ##              Prevalence : 0.3182          
-    ##          Detection Rate : 0.1477          
-    ##    Detection Prevalence : 0.1932          
-    ##       Balanced Accuracy : 0.6988          
-    ##                                           
-    ##        'Positive' Class : Y               
+    ##          N 56 14
+    ##          Y  4 14
+    ##                                          
+    ##                Accuracy : 0.7955         
+    ##                  95% CI : (0.6961, 0.874)
+    ##     No Information Rate : 0.6818         
+    ##     P-Value [Acc > NIR] : 0.01252        
+    ##                                          
+    ##                   Kappa : 0.4789         
+    ##                                          
+    ##  Mcnemar's Test P-Value : 0.03389        
+    ##                                          
+    ##             Sensitivity : 0.5000         
+    ##             Specificity : 0.9333         
+    ##          Pos Pred Value : 0.7778         
+    ##          Neg Pred Value : 0.8000         
+    ##              Prevalence : 0.3182         
+    ##          Detection Rate : 0.1591         
+    ##    Detection Prevalence : 0.2045         
+    ##       Balanced Accuracy : 0.7167         
+    ##                                          
+    ##        'Positive' Class : Y              
     ## 
 
 ``` r
@@ -576,26 +578,26 @@ confusionMatrix(data = as.factor(test.mars), reference = hf_df$death_event[-trai
     ## 
     ##           Reference
     ## Prediction  N  Y
-    ##          N 58  8
-    ##          Y  2 20
+    ##          N 56 10
+    ##          Y  4 18
     ##                                           
-    ##                Accuracy : 0.8864          
-    ##                  95% CI : (0.8009, 0.9441)
+    ##                Accuracy : 0.8409          
+    ##                  95% CI : (0.7475, 0.9102)
     ##     No Information Rate : 0.6818          
-    ##     P-Value [Acc > NIR] : 6.9e-06         
+    ##     P-Value [Acc > NIR] : 0.0005567       
     ##                                           
-    ##                   Kappa : 0.7222          
+    ##                   Kappa : 0.6111          
     ##                                           
-    ##  Mcnemar's Test P-Value : 0.1138          
+    ##  Mcnemar's Test P-Value : 0.1814492       
     ##                                           
-    ##             Sensitivity : 0.7143          
-    ##             Specificity : 0.9667          
-    ##          Pos Pred Value : 0.9091          
-    ##          Neg Pred Value : 0.8788          
+    ##             Sensitivity : 0.6429          
+    ##             Specificity : 0.9333          
+    ##          Pos Pred Value : 0.8182          
+    ##          Neg Pred Value : 0.8485          
     ##              Prevalence : 0.3182          
-    ##          Detection Rate : 0.2273          
+    ##          Detection Rate : 0.2045          
     ##    Detection Prevalence : 0.2500          
-    ##       Balanced Accuracy : 0.8405          
+    ##       Balanced Accuracy : 0.7881          
     ##                                           
     ##        'Positive' Class : Y               
     ## 
